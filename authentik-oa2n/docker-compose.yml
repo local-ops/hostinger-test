@@ -2,8 +2,9 @@ services:
   authentik-server:
     image: ghcr.io/goauthentik/server:2025.6.4
     restart: unless-stopped
-    ports:
-      - "9000"
+    networks:
+      - default
+      - traefik_proxy
     labels:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`)
@@ -74,6 +75,11 @@ services:
     volumes:
       - authentik-media:/media
       - authentik-templates:/templates
+
+networks:
+  traefik_proxy:
+    external: true
+    name: traefik_proxy
 
 volumes:
   authentik-postgres:

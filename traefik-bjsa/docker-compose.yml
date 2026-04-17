@@ -2,13 +2,18 @@ services:
   traefik:
     image: traefik:latest
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - traefik_proxy
     command:
       - --api.dashboard=false
       - --api.insecure=false
       - --log.level=INFO
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik_proxy
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
@@ -20,6 +25,11 @@ services:
     volumes:
       - traefik-letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+networks:
+  traefik_proxy:
+    name: traefik_proxy
+    driver: bridge
 
 volumes:
   traefik-letsencrypt:
