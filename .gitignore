@@ -1,0 +1,10 @@
+# Secrets
+.env
+*.env
+
+# Traefik Zertifikate
+**/letsencrypt/
+acme.json
+
+# Docker Volumes (falls lokal gemountet)
+**/data/
