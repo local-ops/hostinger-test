@@ -8,3 +8,4 @@ acme.json
 
 # Docker Volumes (falls lokal gemountet)
 **/data/
+*.log
