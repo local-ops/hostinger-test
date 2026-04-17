@@ -28,8 +28,8 @@ services:
 
 networks:
   traefik_proxy:
+    external: true
     name: traefik_proxy
-    driver: bridge
 
 volumes:
   traefik-letsencrypt:
