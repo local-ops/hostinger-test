@@ -1,0 +1,48 @@
+2026-04-17T15:29:58.478179 Project directory: /docker/authentik-oa2n
+2026-04-17T15:29:58.478364 Pulling project images
+2026-04-17T15:29:58.478898 ------------------------------
+2026-04-17T15:29:58.525717  Image redis:7 Pulling 
+2026-04-17T15:29:58.526058  Image ghcr.io/goauthentik/server:2025.6.4 Pulling 
+2026-04-17T15:29:58.526072  Image postgres:16 Pulling 
+2026-04-17T15:30:07.976291  Image redis:7 Pulled 
+2026-04-17T15:30:12.035948  Image postgres:16 Pulled 
+2026-04-17T15:30:27.993458  Image ghcr.io/goauthentik/server:2025.6.4 Pulled 
+2026-04-17T15:30:28.039843 ------------------------------
+2026-04-17T15:30:28.039954 Deploying project
+2026-04-17T15:30:28.040559 ------------------------------
+2026-04-17T15:30:28.176673  Network authentik-oa2n_default Creating 
+2026-04-17T15:30:28.211196  Network authentik-oa2n_default Created 
+2026-04-17T15:30:28.211902  Volume authentik-oa2n_authentik-media Creating 
+2026-04-17T15:30:28.213498  Volume authentik-oa2n_authentik-media Created 
+2026-04-17T15:30:28.213925  Volume authentik-oa2n_authentik-templates Creating 
+2026-04-17T15:30:28.215614  Volume authentik-oa2n_authentik-templates Created 
+2026-04-17T15:30:28.215920  Volume authentik-oa2n_authentik-postgres Creating 
+2026-04-17T15:30:28.216944  Volume authentik-oa2n_authentik-postgres Created 
+2026-04-17T15:30:28.217237  Volume authentik-oa2n_authentik-redis Creating 
+2026-04-17T15:30:28.218195  Volume authentik-oa2n_authentik-redis Created 
+2026-04-17T15:30:28.218654  Container authentik-oa2n-redis-1 Creating 
+2026-04-17T15:30:28.219017  Container authentik-oa2n-postgresql-1 Creating 
+2026-04-17T15:30:28.727369  Container authentik-oa2n-redis-1 Created 
+2026-04-17T15:30:28.729095  Container authentik-oa2n-postgresql-1 Created 
+2026-04-17T15:30:28.729136  Container authentik-oa2n-authentik-worker-1 Creating 
+2026-04-17T15:30:28.729310  Container authentik-oa2n-authentik-server-1 Creating 
+2026-04-17T15:30:28.784140  Container authentik-oa2n-authentik-worker-1 Created 
+2026-04-17T15:30:28.785467  Container authentik-oa2n-authentik-server-1 Created 
+2026-04-17T15:30:28.819106  Container authentik-oa2n-redis-1 Starting 
+2026-04-17T15:30:28.819171  Container authentik-oa2n-postgresql-1 Starting 
+2026-04-17T15:30:29.004954  Container authentik-oa2n-redis-1 Started 
+2026-04-17T15:30:29.029302  Container authentik-oa2n-postgresql-1 Started 
+2026-04-17T15:30:29.029357  Container authentik-oa2n-postgresql-1 Waiting 
+2026-04-17T15:30:29.029382  Container authentik-oa2n-redis-1 Waiting 
+2026-04-17T15:30:29.029389  Container authentik-oa2n-postgresql-1 Waiting 
+2026-04-17T15:30:29.029395  Container authentik-oa2n-redis-1 Waiting 
+2026-04-17T15:30:34.530780  Container authentik-oa2n-redis-1 Healthy 
+2026-04-17T15:30:34.530841  Container authentik-oa2n-postgresql-1 Healthy 
+2026-04-17T15:30:34.530849  Container authentik-oa2n-authentik-worker-1 Starting 
+2026-04-17T15:30:34.530856  Container authentik-oa2n-redis-1 Healthy 
+2026-04-17T15:30:34.531239  Container authentik-oa2n-postgresql-1 Healthy 
+2026-04-17T15:30:34.531256  Container authentik-oa2n-authentik-server-1 Starting 
+2026-04-17T15:30:34.730726  Container authentik-oa2n-authentik-server-1 Started 
+2026-04-17T15:30:34.730772  Container authentik-oa2n-authentik-worker-1 Started 
+2026-04-17T15:30:34.738933 ------------------------------
+2026-04-17T15:30:34.738964 Project deployed successfully
