@@ -16,6 +16,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             docker network inspect traefik_proxy >/dev/null 2>&1 || docker network create traefik_proxy
-            cd /docker/traefik-bjsa && git pull --ff-only origin main && ([ -f scripts/bootstrap-host.sh ] && bash scripts/bootstrap-host.sh) && docker compose pull && docker compose up -d
+            cd /docker/traefik-bjsa && git pull --ff-only origin main && if [ -f scripts/bootstrap-host.sh ]; then bash scripts/bootstrap-host.sh; fi && docker compose pull && docker compose up -d
             cd /docker/n8n-018u && git pull --ff-only origin main && docker compose pull && docker compose up -d
             cd /docker/authentik-oa2n && git pull --ff-only origin main && docker compose pull && docker compose up -d
