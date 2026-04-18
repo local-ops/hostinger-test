@@ -15,7 +15,47 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker network inspect traefik_proxy >/dev/null 2>&1 || docker network create traefik_proxy
-            cd /docker/traefik-bjsa && git pull --ff-only origin main && if [ -f scripts/bootstrap-host.sh ]; then bash scripts/bootstrap-host.sh; fi && docker compose pull && docker compose up -d
-            cd /docker/n8n-018u && git pull --ff-only origin main && docker compose pull && docker compose up -d
-            cd /docker/authentik-oa2n && git pull --ff-only origin main && docker compose pull && docker compose up -d
+            set -e
+
+            echo "==> Prepare shared docker network"
+            if docker network inspect traefik_proxy >/dev/null 2>&1; then
+              echo "traefik_proxy network already exists."
+            else
+              echo "Creating traefik_proxy network."
+              docker network create traefik_proxy
+            fi
+
+            echo "==> Phase 1/2: Update system sources (git pull)"
+            echo "--> Updating stack: /docker/traefik-bjsa"
+            cd /docker/traefik-bjsa
+            git pull --ff-only origin main
+            if [ -f scripts/bootstrap-host.sh ]; then
+              echo "Running optional bootstrap-host.sh."
+              bash scripts/bootstrap-host.sh
+            else
+              echo "No bootstrap-host.sh found. Skipping bootstrap step."
+            fi
+
+            echo "--> Updating stack: /docker/n8n-018u"
+            cd /docker/n8n-018u
+            git pull --ff-only origin main
+
+            echo "--> Updating stack: /docker/authentik-oa2n"
+            cd /docker/authentik-oa2n
+            git pull --ff-only origin main
+
+            echo "==> Phase 2/2: Update and restart containers"
+            echo "--> Deploying stack: /docker/traefik-bjsa"
+            cd /docker/traefik-bjsa
+            docker compose pull
+            docker compose up -d
+
+            echo "--> Deploying stack: /docker/n8n-018u"
+            cd /docker/n8n-018u
+            docker compose pull
+            docker compose up -d
+
+            echo "--> Deploying stack: /docker/authentik-oa2n"
+            cd /docker/authentik-oa2n
+            docker compose pull
+            docker compose up -d
