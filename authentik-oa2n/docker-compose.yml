@@ -8,11 +8,11 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_proxy
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.rule=Host(`${SUBDOMAIN:-authentik}.${TRAEFIK_HOST}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.rule=Host(`${SUBDOMAIN}.${TRAEFIK_HOST}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.entrypoints=websecure
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.tls.certresolver=letsencrypt
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.service=${COMPOSE_PROJECT_NAME}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=Host(`${SUBDOMAIN:-authentik}.${TRAEFIK_HOST}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=Host(`${SUBDOMAIN}.${TRAEFIK_HOST}`) && !PathPrefix(`/.well-known/acme-challenge`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.entrypoints=web
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.middlewares=${COMPOSE_PROJECT_NAME}-redirect-to-https
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.service=${COMPOSE_PROJECT_NAME}

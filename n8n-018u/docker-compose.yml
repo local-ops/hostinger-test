@@ -7,12 +7,12 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_proxy
-      # Public hostname: ${SUBDOMAIN}.${TRAEFIK_HOST} (default "n8n" so folder name n8n-018u does not leak into DNS)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.rule=Host(`${SUBDOMAIN:-n8n}.${TRAEFIK_HOST}`)
+      # Public hostname: ${SUBDOMAIN}.${TRAEFIK_HOST} (set SUBDOMAIN in .env)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.rule=Host(`${SUBDOMAIN}.${TRAEFIK_HOST}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.entrypoints=websecure
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.tls.certresolver=letsencrypt
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-https.service=${COMPOSE_PROJECT_NAME}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=Host(`${SUBDOMAIN:-n8n}.${TRAEFIK_HOST}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=Host(`${SUBDOMAIN}.${TRAEFIK_HOST}`) && !PathPrefix(`/.well-known/acme-challenge`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.entrypoints=web
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.middlewares=${COMPOSE_PROJECT_NAME}-redirect-to-https
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.service=${COMPOSE_PROJECT_NAME}
@@ -22,10 +22,10 @@ services:
     environment:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - N8N_RUNNERS_ENABLED=true
-      - N8N_HOST=${SUBDOMAIN:-n8n}.${TRAEFIK_HOST}
+      - N8N_HOST=${SUBDOMAIN}.${TRAEFIK_HOST}
       - N8N_PROTOCOL=https
       - N8N_SECURE_COOKIE=true
-      - WEBHOOK_URL=https://${SUBDOMAIN:-n8n}.${TRAEFIK_HOST}/
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${TRAEFIK_HOST}/
       - NODE_ENV=production
       - GENERIC_TIMEZONE=${TZ}
       - TZ=${TZ}
