@@ -1,0 +1,20 @@
+name: Restart all Docker stacks
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart all compose stacks via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker network inspect traefik_proxy >/dev/null 2>&1 || docker network create traefik_proxy
+            cd /docker/traefik-bjsa && docker compose up -d
+            cd /docker/n8n-018u && docker compose up -d
+            cd /docker/authentik-oa2n && docker compose up -d
