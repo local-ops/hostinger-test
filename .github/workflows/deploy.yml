@@ -15,7 +15,77 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker network inspect traefik_proxy >/dev/null 2>&1 || docker network create traefik_proxy
-            cd /docker/traefik-bjsa && git pull --ff-only origin main && ([ -f scripts/bootstrap-host.sh ] && bash scripts/bootstrap-host.sh) && docker compose pull && docker compose up -d
-            cd /docker/n8n-018u && git pull --ff-only origin main && docker compose pull && docker compose up -d
-            cd /docker/authentik-oa2n && git pull --ff-only origin main && docker compose pull && docker compose up -d
+            set -e
+            DOCKER_ROOT="/docker"
+
+            is_excluded_directory() {
+              case "$1" in
+                script|scripts)
+                  return 0
+                  ;;
+                *)
+                  return 1
+                  ;;
+              esac
+            }
+
+            has_compose_file() {
+              stack_dir="$1"
+              [ -f "$stack_dir/docker-compose.yml" ] || \
+              [ -f "$stack_dir/docker-compose.yaml" ] || \
+              [ -f "$stack_dir/compose.yml" ] || \
+              [ -f "$stack_dir/compose.yaml" ]
+            }
+
+            echo "==> Prepare shared docker network"
+            if docker network inspect traefik_proxy >/dev/null 2>&1; then
+              echo "traefik_proxy network already exists."
+            else
+              echo "Creating traefik_proxy network."
+              docker network create traefik_proxy
+            fi
+
+            echo "==> Phase 1/2: Update system sources (git pull)"
+            for stack_dir in "$DOCKER_ROOT"/*; do
+              [ -d "$stack_dir" ] || continue
+              stack_name="$(basename "$stack_dir")"
+
+              if is_excluded_directory "$stack_name"; then
+                echo "Skipping excluded directory: $stack_dir"
+                continue
+              fi
+
+              echo "--> Updating stack: $stack_dir"
+              if git -C "$stack_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+                git -C "$stack_dir" pull --ff-only origin main
+              else
+                echo "Directory is not a git repository. Skipping git pull."
+              fi
+
+              if [ -f "$stack_dir/scripts/bootstrap-host.sh" ]; then
+                echo "Running optional bootstrap-host.sh in $stack_dir."
+                bash "$stack_dir/scripts/bootstrap-host.sh"
+              else
+                echo "No bootstrap-host.sh found in $stack_dir. Skipping bootstrap step."
+              fi
+            done
+
+            echo "==> Phase 2/2: Update and restart containers"
+            for stack_dir in "$DOCKER_ROOT"/*; do
+              [ -d "$stack_dir" ] || continue
+              stack_name="$(basename "$stack_dir")"
+
+              if is_excluded_directory "$stack_name"; then
+                echo "Skipping excluded directory: $stack_dir"
+                continue
+              fi
+
+              if has_compose_file "$stack_dir"; then
+                echo "--> Deploying stack: $stack_dir"
+                cd "$stack_dir"
+                docker compose pull
+                docker compose up -d
+              else
+                echo "No compose file found in $stack_dir. Skipping container update."
+              fi
+            done
