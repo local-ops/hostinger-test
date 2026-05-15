@@ -1,20 +1,25 @@
 # macOS
 .DS_Store
 
-# Node / Eleventy (e.g. ai-consult-11ty)
-**/node_modules/
-**/_site/
+# Node / Eleventy
+apps/**/node_modules/
+apps/**/_site/
 
-# Secrets
+# Generated config
 .env
-*.env
-!.env.example
-!**/.env.example
+.secrets.tmp.yaml
+.config.merge.tmp.yaml
+.secrets.enc.stamp
 
-# Traefik Zertifikate
+# Local plaintext secrets (never commit)
+config.secrets.yml
+
+# Traefik certificates on disk
 **/letsencrypt/
 acme.json
 
-# Docker Volumes (falls lokal gemountet)
-**/data/
+# Host data (bind mounts live outside repo)
+/docker/data/
+
+# Logs
 *.log

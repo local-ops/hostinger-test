@@ -1,40 +1,85 @@
-# hostinger-test — Agent-Kontext
+# sbs — Agent-Kontext (hostinger-test)
 
 ## Projekt
 
-Docker-Compose-betriebene Server-Landschaft: **Traefik** (Reverse Proxy, TLS), **n8n**, **Authentik**, **ai-consult-11ty** (statische Beratungs-Onepager, öffentlich). Ziel ist reproduzierbarer Betrieb; auf dem Zielhost liegt die Konvention typischerweise unter `/docker`.
+Monolithisches Docker-Compose-Projekt **sbs**: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
+
+## Host-Pfade
+
+| Pfad | Zweck |
+|------|--------|
+| `/docker/config/` | Git-Repository (dieses Repo auf dem Server) |
+| `/docker/data/` | Bind-Mount-Daten pro Layer/Service |
+| `/docker/backup/` | Backup-Ziel (v1: Ordner nur, Logik OOS) |
 
 ## Repo-Layout
 
-- Jeder Stack in einem **eigenen Unterordner** mit `docker-compose.yml` und `.env.example`.
-- Secrets und Host-spezifische Werte nur in **`.env`** (nicht versioniert); Vorlagen aus `.env.example` ableiten.
+- `docker-compose.yml` — Root mit `include:` aktiver Layer
+- `config.yml` — nicht-secret, echte Werte im Repo
+- `config.secrets.enc.yml` — SOPS-verschlüsselt; entschlüsseln mit `task system:secrets-export`
+- `compose/00_network.yml` … `06_monitoring.yml` — Layer; `03`, `04`, `06` reserved (include auskommentiert)
+- `apps/static|dynamic|service/` — nur eigener Code (`static/ai-consult-11ty`); keine Registry-Apps
+- `scripts/export_config.sh` — YAML → `.env` (yq)
+- `Taskfile.yml` — `system:*` und `maintenance:*`
 
-## Befehle und go-task (Task)
+## UID-Tabelle (Host-System-User)
 
-- Alle **Befehle, die man braucht, um einen Stack oder ein Artefakt zu nutzen** (lokal bauen, entwickeln, Container starten/stoppen, Tests, Hilfsskripte usw.), müssen über **[go-task](https://taskfile.dev/)** (`task` CLI) abgebildet werden — nicht nur als freie Shell-Zeilen in der Doku.
-- Dazu gehört eine **`Taskfile.yml` im jeweiligen Stack-Ordner** (dort, wo auch `docker-compose.yml` liegt). Namen der Tasks sollen klar und stabil sein (z. B. `dev`, `build`, `up`, `down`).
-- README oder Kommentare dürfen `task …` referenzieren; die **kanonische** Schnittstelle für wiederholbare Schritte ist die Task-Definition im Ordner.
+| Ebene | Bereich | Beispiel | Daten unter |
+|-------|---------|----------|-------------|
+| Proxy | 1000–1099 | 1000 traefik | `/docker/data/proxy/` |
+| Auth | 2000–2099 | 2000 authentik | `/docker/data/auth/` |
+| Secrets | 3000–3099 | 3000 vaultwarden | `/docker/data/secrets/` |
+| Datenbanken | 4000–4099 | 4000 postgres, 4001 redis | `/docker/data/auth/postgres`, `…/redis` |
+| Monitoring | 5000–5099 | 5000 grafana | `/docker/data/monitoring/` |
+| Apps | 6000–6099 | 6000 n8n | `/docker/data/apps/` |
+| Files | 6100–6199 | 6100 nextcloud | `/docker/data/files/` |
+
+`task system:init` legt Verzeichnisse an; UID/`user:` in Compose schrittweise. **Ausnahme Traefik:** Zugriff auf `/var/run/docker.sock` — Abweichung von „nur eigener Ordner“; bei weiteren Ausnahmen in AGENTS.md dokumentieren.
+
+## yq-Flatten (`config.yml` → `.env`)
+
+1. Nur Skalar-Blätter exportieren.
+2. Pfad `a.b.c` → Env-Name `A_B_C` (Punkte → Unterstrich, Großbuchstaben).
+3. Merge: zuerst `config.yml`, dann Secrets; bei Kollision gewinnt Secret.
+4. `.env`: `NAME=wert`, keine Anführungszeichen; gitignored, `chmod 600`.
+5. Jeder exportierte Key muss im Service unter `environment:` stehen (nicht nur in Traefik-Labels).
+
+Beispiel: `auth.authentik.domain` → `AUTH_AUTHENTIK_DOMAIN`.
+
+## Config & Secrets
+
+- **config.yml** — Domains, ACME-Mail, TZ (committed).
+- **config.secrets.enc.yml** — `postgres_password`, `secret_key` (SOPS).
+- Erzeugen: `task system:secrets-export` (nach `sops --encrypt …`).
+- `task system:start` ruft `export-config` auf (Secrets nur bei geändertem `.enc.yml` neu decrypten).
+
+## Befehle (go-task)
+
+- Produktion: `task system:start`, `task system:stop`, `task system:pull`
+- Wartung (v1 Stubs): `task maintenance:update`, `maintenance:restore`, `maintenance:update-zsh`
+- Lokale Site-Entwicklung: `task -d apps/static/ai-consult-11ty dev`
 
 ## Deployment
 
-- Auslieferung über **GitHub Actions** (SSH), ausgelöst durch Push auf **`main`**; es gibt einen separaten Workflow für manuelle Restarts.
-- Deploy führt `docker compose up -d --build` aus, damit Image-Build-Stacks (z. B. **ai-consult-11ty**) nach `git pull` zuverlässig neu gebaut werden.
-- Kein Produktions-Deploy oder Host-Zugriff annehmen oder simulieren, wenn der Nutzer das nicht ausdrücklich verlangt.
+- GitHub Actions: SSH → `cd /docker/config && git pull && task system:start`
+- Kein Produktions-Deploy simulieren ohne ausdrückliche Anfrage.
 
-## Änderungen an Stacks
+## Routing
 
-- Routing/TLS über **Traefik-Labels** in den Compose-Dateien; Änderungen konsistent über alle betroffenen Services halten.
-- Das Docker-Netz **`traefik_proxy`** ist deploymentspezifisch und muss auf dem Host zur Compose-Konfiguration passen.
+- Traefik-Labels in Compose; öffentlich ohne ForwardAuth: `ai-consult-web`
+- n8n: `authentik-forwardauth@docker` (Middleware auf `authentik-server`)
+- Subdomains bevorzugt; PathPrefix nur wenn die App Base-Path unterstützt.
 
-## Unterpfade in Traefik („Sub-Pages“)
+## DNS & TLS (Go-Live)
 
-- Router-**Rule** um einen Pfad ergänzen (analog zu den bestehenden `Host(...)`-Labels in den Compose-Dateien). Beispiel für die Rule-Zeichenkette in Traefik v2/v3:
+- Jede `*_DOMAIN` in `config.yml` als DNS A/AAAA auf den Host
+- Ports 80/443 offen
+- ACME HTTP-01: `/.well-known/acme-challenge` nicht durch Auth blockieren
 
-  ```text
-  Host(`example.com`) && PathPrefix(`/meinpfad`)
-  ```
+## Backup
 
-  In Compose-Labels dieselbe `rule=`-Form wie bei den Host-Routern, nur mit `&& PathPrefix(...)` erweitert; Backticks in der Rule wie in den bestehenden Stacks quoten/escapen.
-- Wenn der Dienst URLs **ohne** den äußeren Präfix erwartet: **StripPrefix**-Middleware definieren (`stripprefix.prefixes=/meinpfad`) und beim Router unter `middlewares=` einhängen.
-- Bei mehreren Routern auf derselben Domain ggf. **`priority`** setzen, damit spezifischere Rules vor allgemeineren greifen.
-- Die Anwendung muss einen **Base-Path** / öffentliche URLs mit unterstützen (n8n, Authentik u. a. oft eher eigene Subdomain statt Unterpfad); vorher prüfen.
+v1: nur `/docker/backup/{layer}/` anlegen; `task maintenance:backup` nicht implementiert.
+
+## Host-Migration (von alten Stacks)
+
+Siehe README — Abschnitt „Migration vom Legacy-Layout“.

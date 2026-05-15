@@ -1,0 +1,17 @@
+version: "3"
+
+tasks:
+  update:
+    desc: Post-upgrade migrations (not implemented in v1)
+    cmds:
+      - echo "maintenance:update — not implemented yet"
+
+  restore:
+    desc: Restore from /docker/backup (not implemented in v1)
+    cmds:
+      - echo "maintenance:restore — backup/restore OOS in v1"
+
+  update-zsh:
+    desc: Shared zsh config and tools (not implemented in v1)
+    cmds:
+      - echo "maintenance:update-zsh — not implemented yet"

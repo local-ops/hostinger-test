@@ -7,6 +7,8 @@ services:
       - "443:443"
     networks:
       - traefik_proxy
+    environment:
+      PROXY_ACME_EMAIL: ${PROXY_ACME_EMAIL}
     command:
       - --api.dashboard=false
       - --api.insecure=false
@@ -18,16 +20,8 @@ services:
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=${PROXY_ACME_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     volumes:
-      - traefik-letsencrypt:/letsencrypt
+      - /docker/data/proxy/traefik/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
-
-networks:
-  traefik_proxy:
-    name: traefik_proxy
-    driver: bridge
-
-volumes:
-  traefik-letsencrypt:

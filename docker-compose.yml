@@ -1,0 +1,10 @@
+name: sbs
+
+include:
+  - compose/00_network.yml
+  - compose/01_proxy.yml
+  - compose/02_auth.yml
+  # - compose/03_secrets.yml
+  # - compose/04_files.yml
+  - compose/05_apps.yml
+  # - compose/06_monitoring.yml

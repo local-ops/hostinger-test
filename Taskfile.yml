@@ -1,0 +1,11 @@
+version: "3"
+
+includes:
+  system: ./Taskfile.system.yml
+  maintenance: ./Taskfile.maintenance.yml
+
+vars:
+  SBS_ROOT: "{{.ROOT_DIR}}"
+  CONFIG: "{{.ROOT_DIR}}/config.yml"
+  DATA_ROOT: "{{.SBS_DATA_ROOT | default `/docker/data`}}"
+  BACKUP_ROOT: "{{.SBS_BACKUP_ROOT | default `/docker/backup`}}"

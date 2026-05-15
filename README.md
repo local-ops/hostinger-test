@@ -1,55 +1,110 @@
-# hostinger-test
+# hostinger-test (sbs)
 
-## Core-Essenz
+Docker-Compose-Projekt **sbs** für Traefik, Authentik, n8n und die statische Site **ai-consult-11ty**.
 
-Dieses Repository verwaltet eine Docker-Compose-basierte Server-Landschaft für den Betrieb von:
+## Host-Layout
 
-- **Traefik** als Reverse Proxy + TLS (Let's Encrypt)
-- **n8n** als Automatisierungsplattform
-- **Authentik** als Identity-/Access-Management
-- **ai-consult-11ty** als statische Willkommens-/Beratungs-Onepager (Eleventy-Build in Docker, nginx)
+| Pfad | Inhalt |
+|------|--------|
+| `/docker/config/` | Dieses Repository |
+| `/docker/data/` | Bind-Mount-Daten (nach Layer) |
+| `/docker/backup/` | Backup-Ziel (v1: Ordner nur) |
 
-Ziel ist ein klar strukturierter, reproduzierbarer Betrieb mehrerer Stacks auf einem Host unter `/docker`.
+## Repository
 
-## Wo steht was?
+```
+docker-compose.yml      # include aktiver compose/*.yml
+config.yml              # Domains, ACME, TZ (committed)
+config.secrets.enc.yml  # SOPS (auf dem Server, siehe Ersteinrichtung)
+compose/00…06*.yml      # Layer; 03, 04, 06 reserved
+apps/static/ai-consult-11ty/   # Eleventy-Quellcode
+scripts/export_config.sh
+Taskfile.yml            # system:* und maintenance:*
+```
 
-- `/traefik-bjsa/docker-compose.yml`  
-  Traefik-Stack (Ports 80/443, ACME/TLS, Docker Provider)
-- `/n8n-018u/docker-compose.yml`  
-  n8n-Stack inkl. Traefik-Routing-Labels
-- `/authentik-oa2n/docker-compose.yml`  
-  Authentik-Stack inkl. Postgres, Redis und Traefik-Routing-Labels
-- `/ai-consult-11ty/docker-compose.yml`  
-  Statische KI-Beratungs-Onepager (Multi-Stage-Build: Eleventy → nginx), öffentlich ohne Authentik-ForwardAuth; Befehle über **`Taskfile.yml`** ([go-task](https://taskfile.dev/)): `task install`, `task dev`, `task build`, `task up`, `task down` (siehe `task --list` im Ordner)
-- `*/.env.example`  
-  Beispielwerte für notwendige Umgebungsvariablen je Stack
-- `/scripts/bootstrap-host.sh`  
-  Optionales Host-Bootstrap-Skript (Debian/Ubuntu, installiert Basis-Tools + oh-my-zsh)
-- `/.github/workflows/deploy.yml`  
-  Automatisches Deployment bei Push auf `main`
-- `/.github/workflows/restart-all-stacks.yml`  
-  Manueller Restart aller Stacks via GitHub Actions
+Details für Agenten: [AGENTS.md](AGENTS.md).
 
-## Wie wird es ausgeliefert?
+## Ersteinrichtung
 
-Die Auslieferung erfolgt über **GitHub Actions + SSH** auf den Zielhost:
+1. Repository nach `/docker/config` klonen.
+2. `config.yml` mit echten Domains anpassen.
+3. Secrets:
+   ```bash
+   cp config.secrets.example.yml config.secrets.yml
+   # Werte setzen, dann:
+   sops --encrypt --age age1YOURKEY... config.secrets.yml > config.secrets.enc.yml
+   rm config.secrets.yml
+   ```
+4. Auf dem Server: `task system:secrets-export` (einmalig oder nach Secret-Änderung).
+5. `task system:start` — legt Datenordner an, erzeugt `.env`, startet Compose.
 
-1. Workflow `deploy.yml` läuft bei Push auf `main`.
-2. Auf dem Host wird das Netzwerk `traefik_proxy` sichergestellt.
-3. Für jeden Stack unter `/docker/*` (außer `script`/`scripts`):
-   - `git pull --ff-only origin main`
-   - optional `scripts/bootstrap-host.sh`
-4. Danach pro Stack mit Compose-Datei:
-   - `docker compose pull`
-   - `docker compose up -d --build` (damit Stacks mit `Dockerfile` wie `ai-consult-11ty` nach jedem Pull neu gebaut werden)
+## Alltagsbefehle
 
-Für einen reinen Neustart ohne Pull kann `restart-all-stacks.yml` manuell ausgelöst werden (inkl. `ai-consult-11ty` mit `--build`).
+| Befehl | Zweck |
+|--------|--------|
+| `task system:start` | init + export + `docker compose up -d --build` |
+| `task system:stop` | Stack stoppen |
+| `task system:pull` | Images pullen |
+| `task system:secrets-export` | SOPS decrypt → `.env` |
+| `task maintenance:update` | Stub (v1) |
 
-### Lokale Entwicklung (ai-consult-11ty)
+Lokale Entwicklung der statischen Site:
 
-Im Ordner `ai-consult-11ty/`:
+```bash
+cd apps/static/ai-consult-11ty
+task install
+task dev
+```
 
-1. `.env` aus `.env.example` anlegen (nur für `task up` / Docker auf dem Host nötig).
-2. `task install` — Node-Abhängigkeiten.
-3. `task dev` — Eleventy mit Live-Reload (Standard: http://localhost:8080).
-4. Produktion lokal testen: `task up` (Docker-Build + nginx hinter Traefik-Labels).
+## Deployment
+
+Push auf `main` → GitHub Actions → SSH → `cd /docker/config && git pull && task system:start`.
+
+Manueller Neustart: Workflow **Restart sbs stack**.
+
+## Migration vom Legacy-Layout
+
+Früher lagen Stacks direkt unter `/docker/` (`traefik-bjsa`, `n8n-018u`, `authentik-oa2n`, `ai-consult-11ty`). Neu: ein Repo unter `/docker/config/`.
+
+### Ablauf (Wartungsfenster)
+
+1. Alte Stacks stoppen (Reihenfolge egal, alles stoppen):
+   ```bash
+   cd /docker/n8n-018u && docker compose down
+   cd /docker/authentik-oa2n && docker compose down
+   cd /docker/ai-consult-11ty && docker compose down
+   cd /docker/traefik-bjsa && docker compose down
+   ```
+2. Repo nach `/docker/config` klonen oder bestehendes Repo dorthin verschieben.
+3. `config.yml` und `config.secrets.enc.yml` auf dem Host bereitstellen.
+4. `task system:init`
+5. **Daten von Named Volumes nach Bind-Mounts kopieren** (Beispiele; Volume-Namen mit `docker volume ls` prüfen):
+
+   | Alt (Volume) | Neu (Host) |
+   |--------------|------------|
+   | `traefik-bjsa_traefik-letsencrypt` oder `traefik-letsencrypt` | `/docker/data/proxy/traefik/letsencrypt/` |
+   | `n8n-018u_n8n_data` | `/docker/data/apps/n8n/` |
+   | `authentik-oa2n_authentik-postgres` | `/docker/data/auth/postgres/` |
+   | `authentik-oa2n_authentik-redis` | `/docker/data/auth/redis/` |
+   | `authentik-oa2n_authentik-media` | `/docker/data/auth/authentik/media/` |
+   | `authentik-oa2n_authentik-templates` | `/docker/data/auth/authentik/templates/` |
+
+   Beispiel Kopie:
+   ```bash
+   docker run --rm -v VOLUME_NAME:/from -v /docker/data/TARGET:/to alpine cp -a /from/. /to/
+   ```
+
+6. `task system:secrets-export && task system:start`
+7. Prüfen: TLS, Authentik-Login, n8n (mit ForwardAuth), öffentliche AI-Consult-Site.
+8. Alte Verzeichnisse unter `/docker/` und ungenutzte Volumes erst nach Stabilisierung entfernen.
+
+### DNS
+
+Jede Domain in `config.yml` (`AUTH_AUTHENTIK_DOMAIN`, `APPS_N8N_DOMAIN`, `APPS_STATIC_AI_CONSULT_DOMAIN`) muss per DNS auf den Server zeigen; Ports 80/443 offen.
+
+## Tools
+
+- [Docker Compose](https://docs.docker.com/compose/)
+- [go-task](https://taskfile.dev/)
+- [yq](https://github.com/mikefarah/yq) — `export_config.sh`
+- [sops](https://github.com/getsops/sops) — Secrets auf dem Server
