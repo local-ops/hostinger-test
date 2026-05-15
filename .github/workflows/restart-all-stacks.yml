@@ -15,5 +15,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /docker/hostinger-test
+            cd /docker/sbs
             task system:start

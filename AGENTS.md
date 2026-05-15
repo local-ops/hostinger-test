@@ -1,8 +1,10 @@
-# sbs — Agent-Kontext (hostinger-test)
+# sbs — Agent-Kontext
 
 ## Projekt
 
-Monolithisches Docker-Compose-Projekt **sbs**: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
+**sbs** = *small business solution*. Monolithisches Docker-Compose-Projekt: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
+
+Repo: `local-ops/sbs` · Server: `/docker/sbs` · Compose-Projektname: `sbs` (`docker-compose.yml`).
 
 ## Repo-Layout (Git-Root = Arbeitsverzeichnis)
 
@@ -63,7 +65,7 @@ Traefik: Ausnahme Docker-Socket.
 
 ## Deployment
 
-GitHub Actions → `git pull` → `task system:start` (ohne `dev:*`).
+Prod-Pfad auf dem Server: `/docker/sbs`. GitHub Actions → `git pull` → `task system:start` (ohne `dev:*`).
 
 ## Routing / DNS
 

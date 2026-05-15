@@ -1,6 +1,8 @@
-# hostinger-test (sbs)
+# sbs — small business solution
 
-Docker-Compose-Projekt **sbs** für Traefik, Authentik, n8n und die statische Site **ai-consult-11ty**.
+Monolithisches Docker-Compose-Projekt (**sbs**) für Traefik, Authentik, n8n und die statische Site **ai-consult-11ty**.
+
+GitHub: [`local-ops/sbs`](https://github.com/local-ops/sbs) · Prod auf dem Server: `/docker/sbs`
 
 ## Prod vs. Local
 
@@ -27,7 +29,10 @@ Details: [AGENTS.md](AGENTS.md).
 
 ## Ersteinrichtung (Server)
 
-1. Repo klonen (z. B. `/docker/hostinger-test`).
+1. Repo klonen nach `/docker/sbs`:
+   ```bash
+   git clone git@github.com:local-ops/sbs.git /docker/sbs
+   ```
 2. `config.yml` mit echten Domains.
 3. SOPS: `config.secrets.example.yml` → encrypt → `config.secrets.enc.yml`.
 4. `task system:secrets-export`
