@@ -16,4 +16,4 @@ jobs:
           script: |
             set -e
             cd /docker/sbs
-            task system:start
+            task system:deploy

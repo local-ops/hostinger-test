@@ -73,11 +73,26 @@ tasks:
         fi
 
   start:
-    desc: init, export .env, docker compose up -d --build
+    desc: init, export .env when secrets changed, docker compose up -d --build
     dir: "{{.ROOT_DIR}}"
     cmds:
       - task: init
       - task: export-config-if-needed
+      - docker compose up -d --build
+
+  deploy:
+    desc: CI/prod deploy — init, always refresh .env from secrets, compose up
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - task: init
+      - |
+        set -euo pipefail
+        ENC="{{.ROOT_DIR}}/config.secrets.enc.yml"
+        if [[ -f "$ENC" ]]; then
+          task system:secrets-export
+        else
+          task system:export-config
+        fi
       - docker compose up -d --build
 
   stop:
@@ -93,6 +108,6 @@ tasks:
       - docker compose pull
 
   bootstrap-host:
-    desc: Optional Debian host packages and oh-my-zsh
+    desc: Debian host packages, go-task, yq, sops, oh-my-zsh (idempotent)
     cmds:
       - bash ./scripts/bootstrap-host.sh
