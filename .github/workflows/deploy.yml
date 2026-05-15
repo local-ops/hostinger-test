@@ -16,7 +16,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /docker/hostinger-test
+            cd /docker/sbs
             git pull --ff-only origin main
             if [ -f ./scripts/bootstrap-host.sh ]; then
               bash ./scripts/bootstrap-host.sh
