@@ -1,0 +1,88 @@
+version: "3"
+
+tasks:
+  init:
+    desc: Create host data/backup directory tree under /docker
+    cmds:
+      - |
+        set -euo pipefail
+        DATA="{{.DATA_ROOT}}"
+        BACKUP="{{.BACKUP_ROOT}}"
+        for layer in proxy auth secrets files apps monitoring; do
+          mkdir -p "$DATA/$layer" "$BACKUP/$layer"
+        done
+        mkdir -p \
+          "$DATA/proxy/traefik/letsencrypt" \
+          "$DATA/auth/postgres" \
+          "$DATA/auth/redis" \
+          "$DATA/auth/authentik/media" \
+          "$DATA/auth/authentik/templates" \
+          "$DATA/apps/n8n"
+        echo "system:init created directories under $DATA and $BACKUP"
+
+  export-config:
+    desc: Flatten config.yml (+ .secrets.tmp.yaml if present) into .env
+    cmds:
+      - ./scripts/export_config.sh
+
+  secrets-export:
+    desc: Decrypt config.secrets.enc.yml and merge into .env (requires sops)
+    cmds:
+      - |
+        set -euo pipefail
+        ENC="{{.ROOT_DIR}}/config.secrets.enc.yml"
+        TMP="{{.ROOT_DIR}}/.secrets.tmp.yaml"
+        STAMP="{{.ROOT_DIR}}/.secrets.enc.stamp"
+        if [[ ! -f "$ENC" ]]; then
+          echo "secrets-export: missing $ENC — see config.secrets.example.yml"
+          exit 1
+        fi
+        sops -d "$ENC" > "$TMP"
+        ./scripts/export_config.sh
+        rm -f "$TMP"
+        sha256sum "$ENC" | awk '{print $1}' > "$STAMP"
+        echo "secrets-export: updated .env and stamp"
+
+  export-config-if-needed:
+    desc: Re-export secrets when config.secrets.enc.yml changed
+    internal: true
+    cmds:
+      - |
+        set -euo pipefail
+        ENC="{{.ROOT_DIR}}/config.secrets.enc.yml"
+        STAMP="{{.ROOT_DIR}}/.secrets.enc.stamp"
+        if [[ ! -f "$ENC" ]]; then
+          task export-config
+          exit 0
+        fi
+        current="$(sha256sum "$ENC" | awk '{print $1}')"
+        if [[ ! -f "$STAMP" ]] || [[ "$(cat "$STAMP")" != "$current" ]]; then
+          task secrets-export
+        else
+          task export-config
+        fi
+
+  start:
+    desc: init, export .env, docker compose up -d --build
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - task: init
+      - task: export-config-if-needed
+      - docker compose up -d --build
+
+  stop:
+    desc: Stop all sbs services
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - docker compose down
+
+  pull:
+    desc: Pull images for all services
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - docker compose pull
+
+  bootstrap-host:
+    desc: Optional Debian host packages and oh-my-zsh
+    cmds:
+      - bash ./scripts/bootstrap-host.sh
