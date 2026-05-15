@@ -2,14 +2,15 @@ version: "3"
 
 tasks:
   init:
-    desc: Create host data/backup directory tree under /docker
+    desc: Create data/, backup/, and config/ directory trees in repo root
     cmds:
       - |
         set -euo pipefail
         DATA="{{.DATA_ROOT}}"
         BACKUP="{{.BACKUP_ROOT}}"
+        SVC_CFG="{{.SERVICE_CONFIG_ROOT}}"
         for layer in proxy auth secrets files apps monitoring; do
-          mkdir -p "$DATA/$layer" "$BACKUP/$layer"
+          mkdir -p "$DATA/$layer" "$BACKUP/$layer" "$SVC_CFG/$layer"
         done
         mkdir -p \
           "$DATA/proxy/traefik/letsencrypt" \
@@ -17,11 +18,20 @@ tasks:
           "$DATA/auth/redis" \
           "$DATA/auth/authentik/media" \
           "$DATA/auth/authentik/templates" \
-          "$DATA/apps/n8n"
-        echo "system:init created directories under $DATA and $BACKUP"
+          "$DATA/apps/n8n" \
+          "$SVC_CFG/proxy/traefik" \
+          "$SVC_CFG/auth/authentik" \
+          "$SVC_CFG/auth/postgresql" \
+          "$SVC_CFG/auth/redis" \
+          "$SVC_CFG/apps/n8n" \
+          "$SVC_CFG/apps/ai-consult-web"
+        bash ./scripts/fix-data-permissions.sh
+        echo "system:init created data/, backup/, config/ under {{.ROOT_DIR}}"
 
   export-config:
-    desc: Flatten config.yml (+ .secrets.tmp.yaml if present) into .env
+    desc: Flatten config.yml (+ SOPS secrets only, no local files) into .env
+    env:
+      SBS_EXPORT_LOCAL: "0"
     cmds:
       - ./scripts/export_config.sh
 
@@ -52,14 +62,14 @@ tasks:
         ENC="{{.ROOT_DIR}}/config.secrets.enc.yml"
         STAMP="{{.ROOT_DIR}}/.secrets.enc.stamp"
         if [[ ! -f "$ENC" ]]; then
-          task export-config
+          task system:export-config
           exit 0
         fi
-        current="$(sha256sum "$ENC" | awk '{print $1}')"
+        current="$(sha256sum "$ENC" | awk '{print $1}' 2>/dev/null || shasum -a 256 "$ENC" | awk '{print $1}')"
         if [[ ! -f "$STAMP" ]] || [[ "$(cat "$STAMP")" != "$current" ]]; then
-          task secrets-export
+          task system:secrets-export
         else
-          task export-config
+          task system:export-config
         fi
 
   start:

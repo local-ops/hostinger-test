@@ -38,8 +38,8 @@ services:
       AUTHENTIK_ERROR_REPORTING__ENABLED: false
       AUTH_AUTHENTIK_DOMAIN: ${AUTH_AUTHENTIK_DOMAIN}
     volumes:
-      - /docker/data/auth/authentik/media:/media
-      - /docker/data/auth/authentik/templates:/templates
+      - ../data/auth/authentik/media:/media
+      - ../data/auth/authentik/templates:/templates
 
   postgresql:
     image: postgres:16
@@ -50,7 +50,7 @@ services:
       POSTGRES_DB: authentik
       AUTH_AUTHENTIK_POSTGRES_PASSWORD: ${AUTH_AUTHENTIK_POSTGRES_PASSWORD}
     volumes:
-      - /docker/data/auth/postgres:/var/lib/postgresql/data
+      - ../data/auth/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
       interval: 5s
@@ -61,7 +61,7 @@ services:
     image: redis:7
     restart: unless-stopped
     volumes:
-      - /docker/data/auth/redis:/data
+      - ../data/auth/redis:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping"]
       interval: 5s
@@ -89,5 +89,5 @@ services:
       AUTH_AUTHENTIK_POSTGRES_PASSWORD: ${AUTH_AUTHENTIK_POSTGRES_PASSWORD}
       AUTH_AUTHENTIK_SECRET_KEY: ${AUTH_AUTHENTIK_SECRET_KEY}
     volumes:
-      - /docker/data/auth/authentik/media:/media
-      - /docker/data/auth/authentik/templates:/templates
+      - ../data/auth/authentik/media:/media
+      - ../data/auth/authentik/templates:/templates

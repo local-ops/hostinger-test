@@ -1,4 +1,4 @@
-# Non-secret configuration (committed). Regenerate .env with: task system:export-config
+# Non-secret configuration (committed). Regenerate .env with: task system:export-config or task dev:export-config
 project:
   name: sbs
 

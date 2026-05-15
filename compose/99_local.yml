@@ -1,0 +1,14 @@
+# Local dev layer — loaded only via COMPOSE_FILE in task dev:* (not on production).
+# Postgres/Redis as named volumes (macOS Colima virtiofs cannot chown bind mounts).
+services:
+  postgresql:
+    volumes:
+      - sbs-postgres-data:/var/lib/postgresql/data
+
+  redis:
+    volumes:
+      - sbs-redis-data:/data
+
+volumes:
+  sbs-postgres-data:
+  sbs-redis-data:
