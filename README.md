@@ -35,8 +35,9 @@ Details: [AGENTS.md](AGENTS.md).
    ```
 2. `config.yml` mit echten Domains.
 3. SOPS: `config.secrets.example.yml` → encrypt → `config.secrets.enc.yml`.
-4. `task system:secrets-export`
-5. `task system:start`
+4. SOPS Age-Key auf dem Host (z. B. `~/.config/sops/age/keys.txt`)
+5. `bash ./scripts/bootstrap-host.sh` (installiert `task`, `yq`, `sops`)
+6. `task system:deploy` (oder einmalig manuell `secrets-export` + `start`)
 
 ## Lokaler Test (Colima)
 
@@ -67,7 +68,7 @@ Nur Eleventy ohne Stack: `task dev:site-dev`
 
 ## Deployment
 
-Push auf `main` → GitHub Actions → `task system:start` (kein `dev:*`).
+Push auf `main` → GitHub Actions → `bootstrap-host.sh` → `task system:deploy` (kein `dev:*`).
 
 ## Migration vom Legacy-Layout
 

@@ -54,18 +54,19 @@ Traefik: Ausnahme Docker-Socket.
 
 | Namespace | Zweck |
 |-----------|--------|
-| **system** | Prod-Server: `start`, `stop`, `secrets-export`, `init` |
+| **system** | Prod-Server: `deploy` (CI), `start`, `stop`, `secrets-export`, `init`, `bootstrap-host` |
 | **dev** | Lokal: `setup`, `start`, `stop`, `export-config`, `site-dev` |
 | **maintenance** | Stubs: `restore`, `update-zsh` |
 
-- Prod: `task system:start`
+- Prod (CI): `task system:deploy` — immer `secrets-export` (wenn `config.secrets.enc.yml`), dann `compose up`
+- Prod (manuell): `task system:start` — Secrets nur bei geändertem Stamp
 - Lokal einmalig: `task dev:setup`
 - Lokal: `task dev:start` (nicht `system:start` — lädt `99_local.yml`)
 - Buildx macOS: `docker buildx use colima-docker`
 
 ## Deployment
 
-Prod-Pfad auf dem Server: `/docker/sbs`. GitHub Actions → `git pull` → `task system:start` (ohne `dev:*`).
+Prod-Pfad auf dem Server: `/docker/sbs`. GitHub Actions → `bootstrap-host.sh` → `task system:deploy` (ohne `dev:*`). SOPS Age-Key muss auf dem Host liegen.
 
 ## Routing / DNS
 

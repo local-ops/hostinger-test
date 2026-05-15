@@ -21,4 +21,4 @@ jobs:
             if [ -f ./scripts/bootstrap-host.sh ]; then
               bash ./scripts/bootstrap-host.sh
             fi
-            task system:start
+            task system:deploy
