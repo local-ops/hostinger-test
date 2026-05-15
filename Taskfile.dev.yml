@@ -67,6 +67,9 @@ tasks:
       - task: colima
       - task system:init
       - task: export-config
+      - |
+        docker network inspect traefik_proxy >/dev/null 2>&1 \
+          || docker network create traefik_proxy
       - docker compose up -d --build
 
   stop:

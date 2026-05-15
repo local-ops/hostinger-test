@@ -1,4 +1,5 @@
+# Shared edge network — often pre-created by legacy Traefik; must not be owned by this project.
 networks:
   traefik_proxy:
     name: traefik_proxy
-    driver: bridge
+    external: true

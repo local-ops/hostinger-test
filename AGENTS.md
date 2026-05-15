@@ -48,7 +48,7 @@ Repo: `local-ops/sbs` · Server: `/docker/sbs` · Compose-Projektname: `sbs` (`d
 | Auth | 2000–2099 | `data/auth/` |
 | Apps | 6000–6099 | `data/apps/` |
 
-Traefik: Ausnahme Docker-Socket.
+Traefik: Ausnahme Docker-Socket. Edge-Netz `traefik_proxy` ist `external: true` (Legacy-Netz auf Prod, lokal per `dev:start`/`bootstrap-host` anlegen).
 
 ## Befehle (go-task)
 

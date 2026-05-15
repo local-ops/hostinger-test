@@ -128,6 +128,21 @@ ensure_sops() {
     "sops"
 }
 
+ensure_traefik_network() {
+  if ! command -v docker >/dev/null 2>&1; then
+    log "warning: docker not in PATH; skipping traefik_proxy network check"
+    return 0
+  fi
+
+  if docker network inspect traefik_proxy >/dev/null 2>&1; then
+    log "docker network traefik_proxy already exists"
+    return 0
+  fi
+
+  log "creating docker network traefik_proxy"
+  docker network create traefik_proxy
+}
+
 ensure_oh_my_zsh() {
   local zsh_dir="${ZSH:-$HOME/.oh-my-zsh}"
   if [[ -d "$zsh_dir" ]]; then
@@ -151,6 +166,7 @@ main() {
   ensure_task
   ensure_yq
   ensure_sops
+  ensure_traefik_network
   ensure_oh_my_zsh
   log "host bootstrap finished (task, yq, sops, docker compose required for deploy)"
 }
