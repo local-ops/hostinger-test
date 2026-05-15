@@ -32,10 +32,10 @@ services:
       APPS_N8N_DOMAIN: ${APPS_N8N_DOMAIN}
       APPS_N8N_TIMEZONE: ${APPS_N8N_TIMEZONE}
     volumes:
-      - /docker/data/apps/n8n:/home/node/.n8n
+      - ../data/apps/n8n:/home/node/.n8n
 
   ai-consult-web:
-    build: apps/static/ai-consult-11ty
+    build: ../apps/static/ai-consult-11ty
     restart: unless-stopped
     networks:
       - traefik_proxy

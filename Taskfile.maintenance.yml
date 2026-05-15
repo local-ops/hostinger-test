@@ -7,7 +7,7 @@ tasks:
       - echo "maintenance:update — not implemented yet"
 
   restore:
-    desc: Restore from /docker/backup (not implemented in v1)
+    desc: Restore from ./backup (not implemented in v1)
     cmds:
       - echo "maintenance:restore — backup/restore OOS in v1"
 

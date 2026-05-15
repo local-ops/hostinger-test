@@ -23,5 +23,5 @@ services:
       - --certificatesresolvers.letsencrypt.acme.email=${PROXY_ACME_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     volumes:
-      - /docker/data/proxy/traefik/letsencrypt:/letsencrypt
+      - ../data/proxy/traefik/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro

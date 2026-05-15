@@ -1,0 +1,102 @@
+version: "3"
+
+vars:
+  COMPOSE_LOCAL: "{{.ROOT_DIR}}/docker-compose.yml:{{.ROOT_DIR}}/compose/99_local.yml"
+
+tasks:
+  setup:
+    desc: One-time local files (config.local.yml, config.secrets.local.yml) + .env
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - |
+        set -euo pipefail
+        if [[ ! -f config.local.yml ]]; then
+          cp config.local.example.yml config.local.yml
+          echo "created config.local.yml"
+        else
+          echo "config.local.yml already exists"
+        fi
+        if [[ ! -f config.secrets.local.yml ]]; then
+          cp config.secrets.local.example.yml config.secrets.local.yml
+          echo "created config.secrets.local.yml"
+        else
+          echo "config.secrets.local.yml already exists"
+        fi
+      - task: export-config
+
+  colima:
+    desc: Start Colima profile docker and use context colima-docker
+    cmds:
+      - colima start -p docker
+      - docker context use colima-docker
+
+  docker-context:
+    desc: Show active Docker context
+    cmds:
+      - docker context show
+
+  export-config:
+    desc: Merge config.yml + config.local.yml + local secrets into .env
+    dir: "{{.ROOT_DIR}}"
+    env:
+      SBS_EXPORT_LOCAL: "1"
+    cmds:
+      - ./scripts/export_config.sh --local
+
+  secrets-export:
+    desc: Regenerate .env with local files (ignores SOPS unless you run system:secrets-export)
+    cmds:
+      - task: export-config
+
+  compose-config:
+    desc: Validate prod + local compose merge
+    dir: "{{.ROOT_DIR}}"
+    env:
+      COMPOSE_FILE: "{{.COMPOSE_LOCAL}}"
+      SBS_EXPORT_LOCAL: "1"
+    cmds:
+      - task: export-config
+      - docker compose config --quiet
+
+  start:
+    desc: Local stack — Colima, init, local .env, compose with 99_local.yml
+    dir: "{{.ROOT_DIR}}"
+    env:
+      COMPOSE_FILE: "{{.COMPOSE_LOCAL}}"
+    cmds:
+      - task: colima
+      - task system:init
+      - task: export-config
+      - docker compose up -d --build
+
+  stop:
+    desc: Stop local stack (prod + 99_local compose files)
+    dir: "{{.ROOT_DIR}}"
+    env:
+      COMPOSE_FILE: "{{.COMPOSE_LOCAL}}"
+    cmds:
+      - docker compose down
+
+  site-install:
+    desc: npm ci for ai-consult-11ty
+    dir: "{{.ROOT_DIR}}/apps/static/ai-consult-11ty"
+    cmds:
+      - npm ci
+
+  site-dev:
+    desc: Eleventy dev server for ai-consult-11ty
+    dir: "{{.ROOT_DIR}}/apps/static/ai-consult-11ty"
+    cmds:
+      - npm run dev
+
+  site-build:
+    desc: Build static site into _site
+    dir: "{{.ROOT_DIR}}/apps/static/ai-consult-11ty"
+    cmds:
+      - npm run build
+
+  site-clean:
+    desc: Remove _site output
+    dir: "{{.ROOT_DIR}}/apps/static/ai-consult-11ty"
+    cmds:
+      - rm -rf _site

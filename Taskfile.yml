@@ -3,9 +3,18 @@ version: "3"
 includes:
   system: ./Taskfile.system.yml
   maintenance: ./Taskfile.maintenance.yml
+  dev: ./Taskfile.dev.yml
+
+tasks:
+  default:
+    desc: List all tasks (system, dev, maintenance)
+    silent: true
+    cmds:
+      - task --list-all
 
 vars:
   SBS_ROOT: "{{.ROOT_DIR}}"
   CONFIG: "{{.ROOT_DIR}}/config.yml"
-  DATA_ROOT: "{{.SBS_DATA_ROOT | default `/docker/data`}}"
-  BACKUP_ROOT: "{{.SBS_BACKUP_ROOT | default `/docker/backup`}}"
+  DATA_ROOT: "{{.ROOT_DIR}}/data"
+  BACKUP_ROOT: "{{.ROOT_DIR}}/backup"
+  SERVICE_CONFIG_ROOT: "{{.ROOT_DIR}}/config"

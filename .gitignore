@@ -5,21 +5,30 @@
 apps/**/node_modules/
 apps/**/_site/
 
+# Runtime data (created by task system:init)
+data/
+backup/
+
+# Legacy local compose override (use compose/99_local.yml via dev:* instead)
+docker-compose.override.yml
+
+# Legacy local test artifacts
+.local/
+
 # Generated config
 .env
 .secrets.tmp.yaml
 .config.merge.tmp.yaml
 .secrets.enc.stamp
 
-# Local plaintext secrets (never commit)
+# Local-only config (prod uses config.yml + config.secrets.enc.yml only)
+config.local.yml
 config.secrets.yml
+config.secrets.local.yml
 
 # Traefik certificates on disk
 **/letsencrypt/
 acme.json
-
-# Host data (bind mounts live outside repo)
-/docker/data/
 
 # Logs
 *.log

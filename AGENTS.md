@@ -4,82 +4,71 @@
 
 Monolithisches Docker-Compose-Projekt **sbs**: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
 
-## Host-Pfade
+## Repo-Layout (Git-Root = Arbeitsverzeichnis)
 
-| Pfad | Zweck |
-|------|--------|
-| `/docker/config/` | Git-Repository (dieses Repo auf dem Server) |
-| `/docker/data/` | Bind-Mount-Daten pro Layer/Service |
-| `/docker/backup/` | Backup-Ziel (v1: Ordner nur, Logik OOS) |
+| Pfad | Zweck | Git |
+|------|--------|-----|
+| `config.yml` | Prod: Domains, ACME, TZ | committed |
+| `config.local.yml` | Local overrides (`.localhost` etc.) | **gitignored** |
+| `config.secrets.enc.yml` | Prod-Secrets (SOPS) | committed |
+| `config.secrets.local.yml` | Local-Secrets | **gitignored** |
+| `config/{layer}/{service}/` | Service-Config-Dateien | committed |
+| `compose/00…05`, `06` | Prod-Compose-Layer | committed |
+| `compose/99_local.yml` | Local-Compose (DB Named Volumes) | committed, **nur dev** |
+| `data/`, `backup/` | Laufzeit / Backups | **gitignored** |
+| `apps/` | Eigener Code | committed |
 
-## Repo-Layout
+**Hinweis:** `config.yml` (Variablen) ≠ Ordner `config/` (Dateien pro Service).
 
-- `docker-compose.yml` — Root mit `include:` aktiver Layer
-- `config.yml` — nicht-secret, echte Werte im Repo
-- `config.secrets.enc.yml` — SOPS-verschlüsselt; entschlüsseln mit `task system:secrets-export`
-- `compose/00_network.yml` … `06_monitoring.yml` — Layer; `03`, `04`, `06` reserved (include auskommentiert)
-- `apps/static|dynamic|service/` — nur eigener Code (`static/ai-consult-11ty`); keine Registry-Apps
-- `scripts/export_config.sh` — YAML → `.env` (yq)
-- `Taskfile.yml` — `system:*` und `maintenance:*`
+## Prod vs. Local
 
-## UID-Tabelle (Host-System-User)
+| | **Prod** (`system:*`, Deploy) | **Local** (`dev:*`) |
+|--|-------------------------------|---------------------|
+| Config | `config.yml` + SOPS → `.env` | `config.yml` + `config.local.yml` + `config.secrets.local.yml` → `.env` |
+| Compose | `docker-compose.yml` | `COMPOSE_FILE=…:compose/99_local.yml` |
+| `config.local.yml` auf Server | **nein** | ja (gitignored) |
 
-| Ebene | Bereich | Beispiel | Daten unter |
-|-------|---------|----------|-------------|
-| Proxy | 1000–1099 | 1000 traefik | `/docker/data/proxy/` |
-| Auth | 2000–2099 | 2000 authentik | `/docker/data/auth/` |
-| Secrets | 3000–3099 | 3000 vaultwarden | `/docker/data/secrets/` |
-| Datenbanken | 4000–4099 | 4000 postgres, 4001 redis | `/docker/data/auth/postgres`, `…/redis` |
-| Monitoring | 5000–5099 | 5000 grafana | `/docker/data/monitoring/` |
-| Apps | 6000–6099 | 6000 n8n | `/docker/data/apps/` |
-| Files | 6100–6199 | 6100 nextcloud | `/docker/data/files/` |
-
-`task system:init` legt Verzeichnisse an; UID/`user:` in Compose schrittweise. **Ausnahme Traefik:** Zugriff auf `/var/run/docker.sock` — Abweichung von „nur eigener Ordner“; bei weiteren Ausnahmen in AGENTS.md dokumentieren.
+`task system:*` setzt `SBS_EXPORT_LOCAL=0` — lokale Dateien werden **nicht** gemerged.
 
 ## yq-Flatten (`config.yml` → `.env`)
 
 1. Nur Skalar-Blätter exportieren.
-2. Pfad `a.b.c` → Env-Name `A_B_C` (Punkte → Unterstrich, Großbuchstaben).
-3. Merge: zuerst `config.yml`, dann Secrets; bei Kollision gewinnt Secret.
-4. `.env`: `NAME=wert`, keine Anführungszeichen; gitignored, `chmod 600`.
-5. Jeder exportierte Key muss im Service unter `environment:` stehen (nicht nur in Traefik-Labels).
+2. Pfad `a.b.c` → `A_B_C`.
+3. Merge-Reihenfolge **local:** `config.yml` → `config.local.yml` → `config.secrets.local.yml` → SOPS-tmp.
+4. Merge-Reihenfolge **prod:** `config.yml` → SOPS-tmp nur.
+5. Jeder Key im Service unter `environment:`.
 
-Beispiel: `auth.authentik.domain` → `AUTH_AUTHENTIK_DOMAIN`.
+## UID-Tabelle
 
-## Config & Secrets
+| Ebene | Bereich | Daten unter |
+|-------|---------|-------------|
+| Proxy | 1000–1099 | `data/proxy/` |
+| Auth | 2000–2099 | `data/auth/` |
+| Apps | 6000–6099 | `data/apps/` |
 
-- **config.yml** — Domains, ACME-Mail, TZ (committed).
-- **config.secrets.enc.yml** — `postgres_password`, `secret_key` (SOPS).
-- Erzeugen: `task system:secrets-export` (nach `sops --encrypt …`).
-- `task system:start` ruft `export-config` auf (Secrets nur bei geändertem `.enc.yml` neu decrypten).
+Traefik: Ausnahme Docker-Socket.
 
 ## Befehle (go-task)
 
-- Produktion: `task system:start`, `task system:stop`, `task system:pull`
-- Wartung (v1 Stubs): `task maintenance:update`, `maintenance:restore`, `maintenance:update-zsh`
-- Lokale Site-Entwicklung: `task -d apps/static/ai-consult-11ty dev`
+| Namespace | Zweck |
+|-----------|--------|
+| **system** | Prod-Server: `start`, `stop`, `secrets-export`, `init` |
+| **dev** | Lokal: `setup`, `start`, `stop`, `export-config`, `site-dev` |
+| **maintenance** | Stubs: `restore`, `update-zsh` |
+
+- Prod: `task system:start`
+- Lokal einmalig: `task dev:setup`
+- Lokal: `task dev:start` (nicht `system:start` — lädt `99_local.yml`)
+- Buildx macOS: `docker buildx use colima-docker`
 
 ## Deployment
 
-- GitHub Actions: SSH → `cd /docker/config && git pull && task system:start`
-- Kein Produktions-Deploy simulieren ohne ausdrückliche Anfrage.
+GitHub Actions → `git pull` → `task system:start` (ohne `dev:*`).
 
-## Routing
+## Routing / DNS
 
-- Traefik-Labels in Compose; öffentlich ohne ForwardAuth: `ai-consult-web`
-- n8n: `authentik-forwardauth@docker` (Middleware auf `authentik-server`)
-- Subdomains bevorzugt; PathPrefix nur wenn die App Base-Path unterstützt.
+Siehe README. Local: `*.localhost` in `config.local.yml` + `/etc/hosts`.
 
-## DNS & TLS (Go-Live)
+## Host-Migration
 
-- Jede `*_DOMAIN` in `config.yml` als DNS A/AAAA auf den Host
-- Ports 80/443 offen
-- ACME HTTP-01: `/.well-known/acme-challenge` nicht durch Auth blockieren
-
-## Backup
-
-v1: nur `/docker/backup/{layer}/` anlegen; `task maintenance:backup` nicht implementiert.
-
-## Host-Migration (von alten Stacks)
-
-Siehe README — Abschnitt „Migration vom Legacy-Layout“.
+README — „Migration vom Legacy-Layout“.

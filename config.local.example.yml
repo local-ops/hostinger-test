@@ -1,0 +1,15 @@
+# Local overrides (gitignored). Copy: cp config.local.example.yml config.local.yml
+# Merged after config.yml; only used by task dev:export-config / dev:start.
+proxy:
+  acme_email: dev@localhost
+
+auth:
+  authentik:
+    domain: authentik.localhost
+
+apps:
+  n8n:
+    domain: n8n.localhost
+  static:
+    ai_consult:
+      domain: ai.localhost

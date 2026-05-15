@@ -8,3 +8,4 @@ include:
   # - compose/04_files.yml
   - compose/05_apps.yml
   # - compose/06_monitoring.yml
+  # compose/99_local.yml — only via COMPOSE_FILE in task dev:* (not production)
