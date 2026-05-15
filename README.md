@@ -7,6 +7,7 @@ Dieses Repository verwaltet eine Docker-Compose-basierte Server-Landschaft für 
 - **Traefik** als Reverse Proxy + TLS (Let's Encrypt)
 - **n8n** als Automatisierungsplattform
 - **Authentik** als Identity-/Access-Management
+- **ai-consult-11ty** als statische Willkommens-/Beratungs-Onepager (Eleventy-Build in Docker, nginx)
 
 Ziel ist ein klar strukturierter, reproduzierbarer Betrieb mehrerer Stacks auf einem Host unter `/docker`.
 
@@ -18,6 +19,8 @@ Ziel ist ein klar strukturierter, reproduzierbarer Betrieb mehrerer Stacks auf e
   n8n-Stack inkl. Traefik-Routing-Labels
 - `/authentik-oa2n/docker-compose.yml`  
   Authentik-Stack inkl. Postgres, Redis und Traefik-Routing-Labels
+- `/ai-consult-11ty/docker-compose.yml`  
+  Statische KI-Beratungs-Onepager (Multi-Stage-Build: Eleventy → nginx), öffentlich ohne Authentik-ForwardAuth; Befehle über **`Taskfile.yml`** ([go-task](https://taskfile.dev/)): `task install`, `task dev`, `task build`, `task up`, `task down` (siehe `task --list` im Ordner)
 - `*/.env.example`  
   Beispielwerte für notwendige Umgebungsvariablen je Stack
 - `/scripts/bootstrap-host.sh`  
@@ -38,6 +41,15 @@ Die Auslieferung erfolgt über **GitHub Actions + SSH** auf den Zielhost:
    - optional `scripts/bootstrap-host.sh`
 4. Danach pro Stack mit Compose-Datei:
    - `docker compose pull`
-   - `docker compose up -d`
+   - `docker compose up -d --build` (damit Stacks mit `Dockerfile` wie `ai-consult-11ty` nach jedem Pull neu gebaut werden)
 
-Für einen reinen Neustart ohne Pull kann `restart-all-stacks.yml` manuell ausgelöst werden.
+Für einen reinen Neustart ohne Pull kann `restart-all-stacks.yml` manuell ausgelöst werden (inkl. `ai-consult-11ty` mit `--build`).
+
+### Lokale Entwicklung (ai-consult-11ty)
+
+Im Ordner `ai-consult-11ty/`:
+
+1. `.env` aus `.env.example` anlegen (nur für `task up` / Docker auf dem Host nötig).
+2. `task install` — Node-Abhängigkeiten.
+3. `task dev` — Eleventy mit Live-Reload (Standard: http://localhost:8080).
+4. Produktion lokal testen: `task up` (Docker-Build + nginx hinter Traefik-Labels).

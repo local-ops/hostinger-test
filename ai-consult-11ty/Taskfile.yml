@@ -1,0 +1,58 @@
+version: "3"
+
+tasks:
+  default:
+    desc: List all tasks
+    silent: true
+    cmds:
+      - task --list
+
+  install:
+    desc: Install Node dependencies (npm ci, requires package-lock.json)
+    cmds:
+      - npm ci
+
+  dev:
+    desc: Run Eleventy dev server with live reload (run install first if needed)
+    cmds:
+      - npm run dev
+
+  build:
+    desc: Build static site into _site
+    cmds:
+      - npm run build
+
+  clean:
+    desc: Remove Eleventy output directory _site
+    cmds:
+      - rm -rf _site
+
+  up:
+    desc: Build image and start stack (docker compose up -d --build)
+    cmds:
+      - docker compose up -d --build
+
+  down:
+    desc: Stop and remove containers for this stack
+    cmds:
+      - docker compose down
+
+  restart:
+    desc: Restart the web service
+    cmds:
+      - docker compose restart web
+
+  logs:
+    desc: Follow logs from the web container
+    cmds:
+      - docker compose logs -f web
+
+  ps:
+    desc: Show compose service status
+    cmds:
+      - docker compose ps
+
+  pull:
+    desc: Pull base images referenced in compose (no-op if only build)
+    cmds:
+      - docker compose pull

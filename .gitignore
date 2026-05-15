@@ -1,6 +1,10 @@
 # macOS
 .DS_Store
 
+# Node / Eleventy (e.g. ai-consult-11ty)
+**/node_modules/
+**/_site/
+
 # Secrets
 .env
 *.env

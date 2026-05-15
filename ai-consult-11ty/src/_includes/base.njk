@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title | default("KI-Beratung und Schulung") }}</title>
+  {% if description %}
+  <meta name="description" content="{{ description }}">
+  {% endif %}
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-logo" href="/">{{ siteTitle }}</a>
+      <nav id="site-nav" class="site-nav" aria-label="Hauptnavigation">
+        <ul>
+          <li><a href="/#start">Start</a></li>
+          <li><a href="/#angebot">Angebot</a></li>
+          <li><a href="/beratung/">Beratung</a></li>
+          <li><a href="/schulung/">Schulung</a></li>
+          <li><a href="/#erfahrung">Erfahrung</a></li>
+          <li><a href="/#fuer-wen">Für wen</a></li>
+          <li><a href="/#kontakt">Kontakt</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {{ content | safe }}
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p class="hashtags" aria-hidden="true">#beratung #schulung #rag #automatisierung</p>
+      <p class="site-footer__legal">
+        <span>&copy; {{ buildYear }} — KI-Beratung</span>
+        <span class="site-footer__sep">|</span>
+        <a href="/#impressum">Impressum</a>
+        <span class="site-footer__sep">|</span>
+        <a href="/#datenschutz">Datenschutz</a>
+      </p>
+      <p id="impressum" class="site-footer__placeholder">Impressum: Platzhalter — Angaben nach §5 TMG / §18 MStV hier ergänzen.</p>
+      <p id="datenschutz" class="site-footer__placeholder">Datenschutz: Platzhalter — Informationen zur Verarbeitung personenbezogener Daten hier ergänzen.</p>
+    </div>
+  </footer>
+</body>
+</html>

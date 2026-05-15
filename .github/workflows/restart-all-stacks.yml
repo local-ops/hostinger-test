@@ -18,3 +18,4 @@ jobs:
             cd /docker/traefik-bjsa && docker compose up -d
             cd /docker/n8n-018u && docker compose up -d
             cd /docker/authentik-oa2n && docker compose up -d
+            cd /docker/ai-consult-11ty && docker compose up -d --build

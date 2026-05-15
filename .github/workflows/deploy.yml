@@ -84,7 +84,7 @@ jobs:
                 echo "--> Deploying stack: $stack_dir"
                 cd "$stack_dir"
                 docker compose pull
-                docker compose up -d
+                docker compose up -d --build
               else
                 echo "No compose file found in $stack_dir. Skipping container update."
               fi
