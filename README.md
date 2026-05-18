@@ -20,6 +20,7 @@ GitHub: [`local-ops/sbs`](https://github.com/local-ops/sbs) · Prod auf dem Serv
 config.yml / config.local.example.yml
 config.secrets.enc.yml / config.secrets.local.example.yml
 compose/00…05.yml, compose/05_apps_demos.yml, compose/99_local.yml
+config/auth/authentik/blueprints/   # deklarative Authentik-Config
 data/ backup/                             # gitignored
 apps/static/ai-consult-11ty/
 apps/static/demo-base/                    # nginx demos (auth-none, auth-forward, …)
@@ -74,28 +75,33 @@ Prod-Hosts: `auth-*.rust-infra.de` (siehe `config.yml`). DNS A/AAAA auf den Serv
 
 Payload-Referenz (Obsidian): `projekte/sbs/auth-demos/01-auth-demo-payloads` im Vault **Main**.
 
-### Authentik setup (demos)
+### Authentik (demos) — Blueprints, keine UI-Pflege
 
-Einmalig in der Authentik-UI (`https://authentik.localhost` bzw. Prod-Domain):
+Provider, Applications, Policies, Embedded Outpost und Testuser kommen aus:
 
-1. **Proxy Provider** (Integration: Forward auth / Traefik)
-2. **Applications** mit External URL = jeweilige Demo-Domain:
-   - `auth-forward` → Policy: Require authentication
-   - `auth-forward-ops` → Policy: User has group `ops` (Testuser anlegen)
-3. **Outpost** (Proxy): Provider zuordnen, beide Forward-Applications aktivieren
-4. **OIDC Provider** Slug `auth-oidc-demo` (wie `config.yml` → `provider_slug`):
-   - Redirect URIs: `https://auth-oidc.localhost/callback` und `https://auth-oidc.rust-infra.de/callback`
-   - Client ID/Secret = `apps.static.auth_demos.oidc` in Secrets
-5. **OIDC Provider** Slug `auth-jwt-api-demo` für API-Tokens (Client Credentials oder Token aus Flow):
-   - JWKS: `https://<AUTH_DOMAIN>/application/o/auth-jwt-api-demo/jwks/`
+[`config/auth/authentik/blueprints/sbs-auth-demos.yaml`](config/auth/authentik/blueprints/sbs-auth-demos.yaml)
 
-Secrets lokal: `config.secrets.local.example.yml` → `config.secrets.local.yml` (wird von `task dev:setup` angelegt). Prod: Werte in SOPS `config.secrets.enc.yml` ergänzen und neu deployen.
+Mount: `compose/02_auth.yml` → `/blueprints/custom` (Server + Worker). Domains und Secrets aus `.env` (`!Env` im Blueprint). Nach Änderung an der YAML: Stack neu starten; der Worker wendet Blueprints automatisch an.
+
+**Secrets** (`config.secrets.local.yml` / SOPS `config.secrets.enc.yml`):
+
+- `apps.static.auth_demos.oidc` — Client ID/Secret für `auth-oidc`
+- `apps.static.auth_demos.jwt_api` — Client ID/Secret für `auth-jwt-api`
+- `apps.static.auth_demos.demo_users` — Passwörter für `demo-user` / `ops-user`
+
+**Testuser (Blueprint):**
+
+| User | Gruppe | Für Demo |
+|------|--------|----------|
+| `demo-user` | — | `auth-forward` OK, `auth-forward-ops` → 403 |
+| `ops-user` | `ops` | `auth-forward-ops` OK |
+
+Status prüfen: Authentik Admin → **Customization** → **Blueprints** → Instanz `sbs-auth-demos` (successful).
 
 **JWT-API testen:**
 
 ```bash
-# Token holen (Client Credentials — Provider in Authentik anlegen)
-TOKEN="$(curl -s -X POST "https://authentik.localhost/application/o/token/" \
+TOKEN="$(curl -s -X POST "https://authentik.localhost/application/o/auth-jwt-api-demo/token/" \
   -d "grant_type=client_credentials" \
   -d "client_id=auth-jwt-api-demo" \
   -d "client_secret=YOUR_SECRET" | jq -r .access_token)"

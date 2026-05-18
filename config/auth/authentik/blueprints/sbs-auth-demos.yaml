@@ -1,0 +1,195 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# Auth demo apps — domains and secrets from .env via !Env (see compose/02_auth.yml)
+version: 1
+metadata:
+  name: sbs-auth-demos
+  labels:
+    blueprints.goauthentik.io/instantiate: "true"
+    blueprints.goauthentik.io/description: "sbs auth demos — forward auth, OIDC, JWT API, test users"
+entries:
+  # --- Groups & demo users (local/lab; passwords from secrets) ---
+  - model: authentik_core.group
+    id: sbs-group-ops
+    identifiers:
+      name: ops
+    attrs:
+      name: ops
+
+  - model: authentik_core.user
+    id: sbs-user-demo
+    identifiers:
+      username: demo-user
+    attrs:
+      username: demo-user
+      name: Demo User
+      path: users
+      password: !Env APPS_STATIC_AUTH_DEMOS_DEMO_USERS_DEMO_USER_PASSWORD, local-demo-password
+
+  - model: authentik_core.user
+    id: sbs-user-ops
+    identifiers:
+      username: ops-user
+    attrs:
+      username: ops-user
+      name: Ops User
+      path: users
+      password: !Env APPS_STATIC_AUTH_DEMOS_DEMO_USERS_OPS_USER_PASSWORD, local-ops-password
+      groups:
+        - !KeyOf sbs-group-ops
+
+  # --- Forward auth: auth-forward ---
+  - model: authentik_providers_proxy.proxyprovider
+    id: sbs-provider-auth-forward
+    identifiers:
+      name: sbs-auth-forward
+    attrs:
+      name: sbs-auth-forward
+      mode: forward_single
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-flow]]
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+      external_host: !Format ["https://%s", !Env APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN]
+      internal_host: http://auth-forward:80
+
+  - model: authentik_core.application
+    id: sbs-app-auth-forward
+    identifiers:
+      slug: auth-forward
+    attrs:
+      name: auth-forward
+      slug: auth-forward
+      provider: !KeyOf sbs-provider-auth-forward
+      launch_url: !Format ["https://%s/", !Env APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN]
+      open_in_new_tab: true
+
+  - model: authentik_policies.expression.expressionpolicy
+    id: sbs-policy-authenticated
+    identifiers:
+      name: sbs-policy-authenticated
+    attrs:
+      name: sbs-policy-authenticated
+      expression: return request.user.is_authenticated
+
+  - model: authentik_policies.policybinding
+    identifiers:
+      order: 0
+      target: !KeyOf sbs-app-auth-forward
+    attrs:
+      order: 0
+      target: !KeyOf sbs-app-auth-forward
+      policy: !KeyOf sbs-policy-authenticated
+      enabled: true
+
+  # --- Forward auth: auth-forward-ops (group ops) ---
+  - model: authentik_providers_proxy.proxyprovider
+    id: sbs-provider-auth-forward-ops
+    identifiers:
+      name: sbs-auth-forward-ops
+    attrs:
+      name: sbs-auth-forward-ops
+      mode: forward_single
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-flow]]
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+      external_host: !Format ["https://%s", !Env APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN]
+      internal_host: http://auth-forward-ops:80
+
+  - model: authentik_core.application
+    id: sbs-app-auth-forward-ops
+    identifiers:
+      slug: auth-forward-ops
+    attrs:
+      name: auth-forward-ops
+      slug: auth-forward-ops
+      provider: !KeyOf sbs-provider-auth-forward-ops
+      launch_url: !Format ["https://%s/", !Env APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN]
+      open_in_new_tab: true
+
+  - model: authentik_policies.expression.expressionpolicy
+    id: sbs-policy-ops-group
+    identifiers:
+      name: sbs-policy-ops-group
+    attrs:
+      name: sbs-policy-ops-group
+      expression: |
+        return request.user.is_authenticated and ak_is_group_member(request.user, name="ops")
+
+  - model: authentik_policies.policybinding
+    identifiers:
+      order: 0
+      target: !KeyOf sbs-app-auth-forward-ops
+    attrs:
+      order: 0
+      target: !KeyOf sbs-app-auth-forward-ops
+      policy: !KeyOf sbs-policy-ops-group
+      enabled: true
+
+  # --- Embedded outpost: attach forward providers + authentik_host ---
+  - model: authentik_outposts.outpost
+    identifiers:
+      name: authentik Embedded Outpost
+    attrs:
+      providers:
+        - !KeyOf sbs-provider-auth-forward
+        - !KeyOf sbs-provider-auth-forward-ops
+      config:
+        authentik_host: !Format ["https://%s", !Env AUTH_AUTHENTIK_DOMAIN]
+        authentik_host_insecure: false
+
+  # --- OIDC: auth-oidc demo app ---
+  - model: authentik_providers_oauth2.oauth2provider
+    id: sbs-provider-auth-oidc
+    identifiers:
+      slug: auth-oidc-demo
+    attrs:
+      name: auth-oidc-demo
+      slug: auth-oidc-demo
+      client_type: confidential
+      client_id: !Env APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_ID
+      client_secret: !Env APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_SECRET
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-flow]]
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+      redirect_uris:
+        - matching_mode: strict
+          url: !Format ["https://%s/callback", !Env APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+
+  - model: authentik_core.application
+    id: sbs-app-auth-oidc
+    identifiers:
+      slug: auth-oidc
+    attrs:
+      name: auth-oidc
+      slug: auth-oidc
+      provider: !KeyOf sbs-provider-auth-oidc
+      launch_url: !Format ["https://%s/", !Env APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN]
+      open_in_new_tab: true
+
+  # --- OIDC: auth-jwt-api (client credentials for Bearer tokens) ---
+  - model: authentik_providers_oauth2.oauth2provider
+    id: sbs-provider-auth-jwt-api
+    identifiers:
+      slug: auth-jwt-api-demo
+    attrs:
+      name: auth-jwt-api-demo
+      slug: auth-jwt-api-demo
+      client_type: confidential
+      client_id: !Env APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_ID
+      client_secret: !Env APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_SECRET
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-flow]]
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+      include_client_credentials: true
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+
+  - model: authentik_core.application
+    id: sbs-app-auth-jwt-api
+    identifiers:
+      slug: auth-jwt-api
+    attrs:
+      name: auth-jwt-api
+      slug: auth-jwt-api
+      provider: !KeyOf sbs-provider-auth-jwt-api
+      launch_url: !Format ["https://%s/", !Env APPS_STATIC_AUTH_DEMOS_JWT_API_DOMAIN]
+      open_in_new_tab: true

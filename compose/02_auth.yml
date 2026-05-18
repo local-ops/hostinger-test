@@ -28,6 +28,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - ../.env
     environment:
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
@@ -40,6 +42,7 @@ services:
     volumes:
       - ../data/auth/authentik/media:/media
       - ../data/auth/authentik/templates:/templates
+      - ../config/auth/authentik/blueprints:/blueprints/custom:ro
 
   postgresql:
     image: postgres:16
@@ -77,6 +80,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - ../.env
     environment:
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
@@ -91,3 +96,4 @@ services:
     volumes:
       - ../data/auth/authentik/media:/media
       - ../data/auth/authentik/templates:/templates
+      - ../config/auth/authentik/blueprints:/blueprints/custom:ro

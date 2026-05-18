@@ -14,7 +14,7 @@ Repo: `local-ops/sbs` · Server: `/docker/sbs` · Compose-Projektname: `sbs` (`d
 | `config.local.yml` | Local overrides (`.localhost` etc.) | **gitignored** |
 | `config.secrets.enc.yml` | Prod-Secrets (SOPS) | committed |
 | `config.secrets.local.yml` | Local-Secrets | **gitignored** |
-| `config/{layer}/{service}/` | Service-Config-Dateien | committed |
+| `config/{layer}/{service}/` | Service-Config-Dateien (inkl. Authentik-Blueprints) | committed |
 | `compose/00…05`, `05_apps_demos`, `06` | Prod-Compose-Layer | committed |
 | `compose/99_local.yml` | Local-Compose (DB Named Volumes) | committed, **nur dev** |
 | `data/`, `backup/` | Laufzeit / Backups | **gitignored** |
@@ -71,6 +71,10 @@ Prod-Pfad auf dem Server: `/docker/sbs`. GitHub Actions → `bootstrap-host.sh` 
 ## Routing / DNS
 
 Siehe README. Local: `*.localhost` in `config.local.yml` + `/etc/hosts`.
+
+## Authentik Blueprints
+
+Auth-Demos (Provider, Apps, Policies, Outpost, OIDC): [`config/auth/authentik/blueprints/sbs-auth-demos.yaml`](config/auth/authentik/blueprints/sbs-auth-demos.yaml). Werte aus `.env` via `env_file` in `compose/02_auth.yml`. Keine manuelle UI-Konfiguration für Demos nötig.
 
 ## Host-Migration
 
