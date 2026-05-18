@@ -10,7 +10,6 @@ services:
       - traefik.http.routers.sbs-n8n-https.rule=Host(`${APPS_N8N_DOMAIN}`)
       - traefik.http.routers.sbs-n8n-https.entrypoints=websecure
       - traefik.http.routers.sbs-n8n-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.sbs-n8n-https.middlewares=authentik-forwardauth@docker
       - traefik.http.routers.sbs-n8n-https.service=sbs-n8n
       - traefik.http.routers.sbs-n8n-http.rule=Host(`${APPS_N8N_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
       - traefik.http.routers.sbs-n8n-http.entrypoints=web
