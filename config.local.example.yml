@@ -13,3 +13,16 @@ apps:
   static:
     ai_consult:
       domain: ai.localhost
+    auth_demos:
+      none:
+        domain: auth-none.localhost
+      forward:
+        domain: auth-forward.localhost
+      forward_ops:
+        domain: auth-forward-ops.localhost
+      oidc:
+        domain: auth-oidc.localhost
+        provider_slug: auth-oidc-demo
+      jwt_api:
+        domain: auth-jwt-api.localhost
+        provider_slug: auth-jwt-api-demo

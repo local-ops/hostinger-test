@@ -65,6 +65,15 @@ tasks:
         sops --encrypt --input-type yaml config.secrets.yml > config.secrets.enc.yml
         echo "enc-secrets: wrote config.secrets.enc.yml — review and git add/commit"
 
+  demos-build:
+    desc: Build all auth demo images
+    dir: "{{.ROOT_DIR}}"
+    env:
+      COMPOSE_FILE: "{{.COMPOSE_LOCAL}}"
+    cmds:
+      - task: export-config
+      - docker compose build auth-none auth-forward auth-forward-ops auth-oidc auth-jwt-api
+
   compose-config:
     desc: Validate prod + local compose merge
     dir: "{{.ROOT_DIR}}"

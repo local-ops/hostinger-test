@@ -1,0 +1,133 @@
+# Auth demo apps — see README "Authentik setup (demos)"
+services:
+  auth-none:
+    build:
+      context: ../apps/static/demo-base
+      args:
+        SITE: auth-none
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_proxy
+      - traefik.http.routers.auth-none-https.rule=Host(`${APPS_STATIC_AUTH_DEMOS_NONE_DOMAIN}`)
+      - traefik.http.routers.auth-none-https.entrypoints=websecure
+      - traefik.http.routers.auth-none-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-none-https.service=auth-none
+      - traefik.http.routers.auth-none-http.rule=Host(`${APPS_STATIC_AUTH_DEMOS_NONE_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.auth-none-http.entrypoints=web
+      - traefik.http.routers.auth-none-http.middlewares=auth-none-redirect-to-https
+      - traefik.http.routers.auth-none-http.service=auth-none
+      - traefik.http.middlewares.auth-none-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.auth-none-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.services.auth-none.loadbalancer.server.port=80
+    environment:
+      APPS_STATIC_AUTH_DEMOS_NONE_DOMAIN: ${APPS_STATIC_AUTH_DEMOS_NONE_DOMAIN}
+
+  auth-forward:
+    build:
+      context: ../apps/static/demo-base
+      args:
+        SITE: auth-forward
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_proxy
+      - traefik.http.routers.auth-forward-https.rule=Host(`${APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN}`)
+      - traefik.http.routers.auth-forward-https.entrypoints=websecure
+      - traefik.http.routers.auth-forward-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-forward-https.middlewares=authentik-forwardauth
+      - traefik.http.routers.auth-forward-https.service=auth-forward
+      - traefik.http.routers.auth-forward-http.rule=Host(`${APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.auth-forward-http.entrypoints=web
+      - traefik.http.routers.auth-forward-http.middlewares=auth-forward-redirect-to-https
+      - traefik.http.routers.auth-forward-http.service=auth-forward
+      - traefik.http.middlewares.auth-forward-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.auth-forward-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.services.auth-forward.loadbalancer.server.port=80
+    environment:
+      APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN: ${APPS_STATIC_AUTH_DEMOS_FORWARD_DOMAIN}
+
+  auth-forward-ops:
+    build:
+      context: ../apps/static/demo-base
+      args:
+        SITE: auth-forward-ops
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_proxy
+      - traefik.http.routers.auth-forward-ops-https.rule=Host(`${APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN}`)
+      - traefik.http.routers.auth-forward-ops-https.entrypoints=websecure
+      - traefik.http.routers.auth-forward-ops-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-forward-ops-https.middlewares=authentik-forwardauth
+      - traefik.http.routers.auth-forward-ops-https.service=auth-forward-ops
+      - traefik.http.routers.auth-forward-ops-http.rule=Host(`${APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.auth-forward-ops-http.entrypoints=web
+      - traefik.http.routers.auth-forward-ops-http.middlewares=auth-forward-ops-redirect-to-https
+      - traefik.http.routers.auth-forward-ops-http.service=auth-forward-ops
+      - traefik.http.middlewares.auth-forward-ops-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.auth-forward-ops-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.services.auth-forward-ops.loadbalancer.server.port=80
+    environment:
+      APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN: ${APPS_STATIC_AUTH_DEMOS_FORWARD_OPS_DOMAIN}
+
+  auth-oidc:
+    build: ../apps/static/auth-oidc
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_proxy
+      - traefik.http.routers.auth-oidc-https.rule=Host(`${APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN}`)
+      - traefik.http.routers.auth-oidc-https.entrypoints=websecure
+      - traefik.http.routers.auth-oidc-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-oidc-https.service=auth-oidc
+      - traefik.http.routers.auth-oidc-http.rule=Host(`${APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.auth-oidc-http.entrypoints=web
+      - traefik.http.routers.auth-oidc-http.middlewares=auth-oidc-redirect-to-https
+      - traefik.http.routers.auth-oidc-http.service=auth-oidc
+      - traefik.http.middlewares.auth-oidc-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.auth-oidc-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.services.auth-oidc.loadbalancer.server.port=3000
+    environment:
+      PORT: "3000"
+      APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN: ${APPS_STATIC_AUTH_DEMOS_OIDC_DOMAIN}
+      APPS_STATIC_AUTH_DEMOS_OIDC_PROVIDER_SLUG: ${APPS_STATIC_AUTH_DEMOS_OIDC_PROVIDER_SLUG}
+      AUTH_AUTHENTIK_DOMAIN: ${AUTH_AUTHENTIK_DOMAIN}
+      APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_ID: ${APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_ID}
+      APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_SECRET: ${APPS_STATIC_AUTH_DEMOS_OIDC_CLIENT_SECRET}
+      APPS_STATIC_AUTH_DEMOS_OIDC_SESSION_SECRET: ${APPS_STATIC_AUTH_DEMOS_OIDC_SESSION_SECRET}
+
+  auth-jwt-api:
+    build: ../apps/static/auth-jwt-api
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_proxy
+      - traefik.http.routers.auth-jwt-api-https.rule=Host(`${APPS_STATIC_AUTH_DEMOS_JWT_API_DOMAIN}`)
+      - traefik.http.routers.auth-jwt-api-https.entrypoints=websecure
+      - traefik.http.routers.auth-jwt-api-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-jwt-api-https.service=auth-jwt-api
+      - traefik.http.routers.auth-jwt-api-http.rule=Host(`${APPS_STATIC_AUTH_DEMOS_JWT_API_DOMAIN}`) && !PathPrefix(`/.well-known/acme-challenge`)
+      - traefik.http.routers.auth-jwt-api-http.entrypoints=web
+      - traefik.http.routers.auth-jwt-api-http.middlewares=auth-jwt-api-redirect-to-https
+      - traefik.http.routers.auth-jwt-api-http.service=auth-jwt-api
+      - traefik.http.middlewares.auth-jwt-api-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.auth-jwt-api-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.services.auth-jwt-api.loadbalancer.server.port=3000
+    environment:
+      PORT: "3000"
+      APPS_STATIC_AUTH_DEMOS_JWT_API_DOMAIN: ${APPS_STATIC_AUTH_DEMOS_JWT_API_DOMAIN}
+      APPS_STATIC_AUTH_DEMOS_JWT_API_PROVIDER_SLUG: ${APPS_STATIC_AUTH_DEMOS_JWT_API_PROVIDER_SLUG}
+      AUTH_AUTHENTIK_DOMAIN: ${AUTH_AUTHENTIK_DOMAIN}
+      APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_ID: ${APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_ID}
+      APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_SECRET: ${APPS_STATIC_AUTH_DEMOS_JWT_API_CLIENT_SECRET}

@@ -15,3 +15,16 @@ apps:
   static:
     ai_consult:
       domain: rust-infra.de
+    auth_demos:
+      none:
+        domain: auth-none.rust-infra.de
+      forward:
+        domain: auth-forward.rust-infra.de
+      forward_ops:
+        domain: auth-forward-ops.rust-infra.de
+      oidc:
+        domain: auth-oidc.rust-infra.de
+        provider_slug: auth-oidc-demo
+      jwt_api:
+        domain: auth-jwt-api.rust-infra.de
+        provider_slug: auth-jwt-api-demo

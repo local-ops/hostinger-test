@@ -2,7 +2,7 @@
 
 ## Projekt
 
-**sbs** = *small business solution*. Monolithisches Docker-Compose-Projekt: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
+**sbs** = *small business solution*. Monolithisches Docker-Compose-Projekt: Traefik (TLS), Authentik (Auth + ForwardAuth), n8n, statische Site `ai-consult-11ty`, fünf Auth-Demos unter `apps/static/`. Registry-Images in `compose/`; eigener Code nur unter `apps/`.
 
 Repo: `local-ops/sbs` · Server: `/docker/sbs` · Compose-Projektname: `sbs` (`docker-compose.yml`).
 
@@ -15,7 +15,7 @@ Repo: `local-ops/sbs` · Server: `/docker/sbs` · Compose-Projektname: `sbs` (`d
 | `config.secrets.enc.yml` | Prod-Secrets (SOPS) | committed |
 | `config.secrets.local.yml` | Local-Secrets | **gitignored** |
 | `config/{layer}/{service}/` | Service-Config-Dateien | committed |
-| `compose/00…05`, `06` | Prod-Compose-Layer | committed |
+| `compose/00…05`, `05_apps_demos`, `06` | Prod-Compose-Layer | committed |
 | `compose/99_local.yml` | Local-Compose (DB Named Volumes) | committed, **nur dev** |
 | `data/`, `backup/` | Laufzeit / Backups | **gitignored** |
 | `apps/` | Eigener Code | committed |
