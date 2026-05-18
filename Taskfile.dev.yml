@@ -48,6 +48,23 @@ tasks:
     cmds:
       - task: export-config
 
+  enc-secrets:
+    desc: Encrypt config.secrets.yml to config.secrets.enc.yml (SOPS; uses .sops.yaml)
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - |
+        set -euo pipefail
+        if [[ ! -f config.secrets.yml ]]; then
+          echo "enc-secrets: missing config.secrets.yml (gitignored). Copy from config.secrets.example.yml" >&2
+          exit 1
+        fi
+        if ! command -v sops >/dev/null 2>&1; then
+          echo "enc-secrets: sops not found" >&2
+          exit 1
+        fi
+        sops --encrypt --input-type yaml config.secrets.yml > config.secrets.enc.yml
+        echo "enc-secrets: wrote config.secrets.enc.yml — review and git add/commit"
+
   compose-config:
     desc: Validate prod + local compose merge
     dir: "{{.ROOT_DIR}}"
