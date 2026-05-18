@@ -29,9 +29,11 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-if ! grep -q '^AUTH_AUTHENTIK_BOOTSTRAP_PASSWORD=' .env; then
+if ! grep -q '^AUTH_AUTHENTIK_BOOTSTRAP_PASSWORD=.' .env; then
   echo "reset-authentik-db: AUTH_AUTHENTIK_BOOTSTRAP_PASSWORD missing in .env" >&2
-  echo "Add auth.authentik.bootstrap_password to config.secrets, re-export, then retry." >&2
+  echo "Ensure config.secrets.enc.yml on this host contains auth.authentik.bootstrap_password," >&2
+  echo "then: git pull && task system:secrets-export" >&2
+  echo "Check: sops -d config.secrets.enc.yml | yq '.auth.authentik | keys'" >&2
   exit 1
 fi
 

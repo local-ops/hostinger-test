@@ -52,7 +52,14 @@ yq eval '.. | select(tag != "!!map" and tag != "!!seq") | (path | join(".")) + "
   path="${line%%=*}"
   value="${line#*=}"
   name="$(echo "$path" | tr '[:lower:]' '[:upper:]' | tr '.' '_')"
-  printf '%s=%s\n' "$name" "$value"
+  # Quote values with shell-special chars (e.g. passwords containing &)
+  if [[ "$value" =~ [^a-zA-Z0-9._@:/+-] ]]; then
+    escaped="${value//\\/\\\\}"
+    escaped="${escaped//\"/\\\"}"
+    printf '%s="%s"\n' "$name" "$escaped"
+  else
+    printf '%s=%s\n' "$name" "$value"
+  fi
 done | LC_ALL=C sort -u > "$ENV_OUT"
 
 rm -f "$MERGE_TMP"
