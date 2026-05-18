@@ -6,11 +6,11 @@ proxy:
   acme_email: cloud_rust@gmx.de
 auth:
   authentik:
-    domain: authentik.rust-infra.de
+    domain: auth.rust-infra.de
 
 apps:
   n8n:
-    domain: n8n.rust-infra.de
+    domain: auto.rust-infra.de
     timezone: Europe/Berlin
   static:
     ai_consult:
