@@ -83,6 +83,7 @@ tasks:
     cmds:
       - task: colima
       - task system:init
+      - bash ./scripts/fix-data-permissions.sh
       - task: export-config
       - docker compose up -d --build
 

@@ -28,6 +28,14 @@ tasks:
         bash ./scripts/fix-data-permissions.sh
         echo "system:init created data/, backup/, config/ under {{.ROOT_DIR}}"
 
+  fix-data-permissions:
+    desc: Verify and fix ownership on data/ bind mounts (recursive; run each deploy)
+    dir: "{{.ROOT_DIR}}"
+    env:
+      SBS_FIX_PERMS_STRICT: "1"
+    cmds:
+      - bash ./scripts/fix-data-permissions.sh
+
   export-config:
     desc: Flatten config.yml (+ SOPS secrets only, no local files) into .env
     env:
@@ -78,6 +86,7 @@ tasks:
     cmds:
       - task: init
       - task: export-config-if-needed
+      - task: fix-data-permissions
       - docker compose up -d --build
 
   deploy:
@@ -93,6 +102,7 @@ tasks:
         else
           task system:export-config
         fi
+      - task: fix-data-permissions
       - docker compose up -d --build
 
   stop:
