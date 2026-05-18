@@ -3,16 +3,15 @@ project:
   name: sbs
 
 proxy:
-  acme_email: you@example.com
-
+  acme_email: cloud_rust@gmx.de
 auth:
   authentik:
-    domain: authentik.example.com
+    domain: authentik.rust-infra.de
 
 apps:
   n8n:
-    domain: n8n.example.com
+    domain: n8n.rust-infra.de
     timezone: Europe/Berlin
   static:
     ai_consult:
-      domain: ai.example.com
+      domain: rust-infra.de
