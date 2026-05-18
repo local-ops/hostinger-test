@@ -121,3 +121,10 @@ tasks:
     desc: Debian host packages, go-task, yq, sops, oh-my-zsh (idempotent)
     cmds:
       - bash ./scripts/bootstrap-host.sh
+
+  reset-authentik-db:
+    desc: "DESTRUCTIVE: wipe Authentik postgres/redis/media and restart (needs bootstrap in secrets)"
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - task: secrets-export
+      - bash ./scripts/reset-authentik-db.sh --yes

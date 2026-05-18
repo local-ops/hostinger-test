@@ -43,6 +43,23 @@ Details: [AGENTS.md](AGENTS.md).
 5. `bash ./scripts/bootstrap-host.sh` (installiert `task`, `yq`, `sops`)
 6. `task system:deploy` (oder einmalig manuell `secrets-export` + `start`)
 
+`akadmin` beim ersten Start (leere Postgres-Daten): `auth.authentik.bootstrap_email` / `bootstrap_password` in Secrets → `AUTHENTIK_BOOTSTRAP_*` am **Worker** (siehe `compose/02_auth.yml`).
+
+### Authentik-Datenbank zurücksetzen (Prod)
+
+**Löscht alle Authentik-User, Provider, Sessions.** Danach neu: Bootstrap + Blueprints.
+
+1. In `config.secrets.yml`: `bootstrap_email` und `bootstrap_password` setzen, nach `config.secrets.enc.yml` encrypten und deployen.
+2. Auf dem Server:
+
+```bash
+cd /docker/sbs
+git pull
+task system:reset-authentik-db
+```
+
+Login danach: `https://auth.rust-infra.de` → User **`akadmin`**, Passwort = `bootstrap_password` aus Secrets.
+
 ## Lokaler Test (Colima)
 
 ```bash
